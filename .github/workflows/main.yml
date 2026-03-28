@@ -13,23 +13,23 @@ jobs:
 
       - name: Swift-Version downgraden (Workaround)
         run: |
-          # Wir ändern im Code die Voraussetzung von Swift 6.2 auf 6.1
           find . -name "Package.swift" -exec sed -i '' 's/swift-tools-version: 6.2.0/swift-tools-version: 6.1.0/g' {} +
           find . -name "Package.swift" -exec sed -i '' 's/swift-tools-version: 6.2/swift-tools-version: 6.1/g' {} +
 
-      - name: Tuist installieren & Projekt vorbereiten
+      - name: Tuist installieren & Projekt vorbereiten (via mise)
+        # Nutzt die offizielle mise-Action, um exakt die vom Entwickler verlangte Tuist-Version zu laden
+        uses: jdx/mise-action@v2
+        with:
+          install: true
+
+      - name: Tuist Abhängigkeiten laden
         run: |
-          # Installiert Tuist (Das neue Build-Tool von IcySky)
-          curl -Ls https://install.tuist.io | bash
-          
-          # Lädt die Pakete und generiert die frischen Xcode-Dateien
-          tuist install
-          tuist generate
+          # Führt Tuist über mise aus
+          mise exec -- tuist install
+          mise exec -- tuist generate
 
       - name: App kompilieren (Ohne Zertifikat)
         run: |
-          # Tuist erstellt in der Regel einen Workspace (.xcworkspace)
-          # Falls nicht, fällt das Skript automatisch auf die .xcodeproj zurück
           if [ -d "IcySky.xcworkspace" ]; then
             export PROJECT_ARG="-workspace IcySky.xcworkspace"
           else
