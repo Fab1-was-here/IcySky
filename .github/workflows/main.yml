@@ -1,19 +1,25 @@
 name: Build Unsigned IPA
 
 on:
-  workflow_dispatch: # Erlaubt das manuelle Starten per Knopfdruck
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest # Nutzt einen virtuellen Mac von GitHub
+    # Wir zwingen GitHub, das neueste macOS 15 zu nutzen, da dort die neuesten Xcode-Versionen liegen
+    runs-on: macos-15
 
     steps:
       - name: Code herunterladen
         uses: actions/checkout@v4
 
+      - name: Xcode Version auf Swift 6.2 einstellen
+        # Dieser Befehl wählt die neueste auf dem Server verfügbare Xcode-Version aus (meist die Beta)
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.3.app || sudo xcode-select -s /Applications/Xcode_16.3_beta.app
+          swift --version
+
       - name: App kompilieren (Ohne Zertifikat)
         run: |
-          # Hier sagen wir Xcode, dass es ohne Apple-Zertifikat bauen soll
           xcodebuild clean archive \
             -project "IcySky.xcodeproj" \
             -scheme "IcySky" \
@@ -26,7 +32,6 @@ jobs:
             
       - name: Zur IPA packen
         run: |
-          # Eine .ipa ist eigentlich nur ein .zip-Ordner mit einem Ordner namens "Payload"
           mkdir -p Payload
           cp -r unsigned.xcarchive/Products/Applications/*.app Payload/
           zip -r IcySky.ipa Payload
